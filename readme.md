@@ -1,5 +1,7 @@
 # Paso a paso para crear el proyecto:
 
+npm install react-native-paper
+
 # Crea el proyecto con TypeScript
 
 npx create-expo-app mi-proyecto-expo-ts -t expo-template-blank-typescript
