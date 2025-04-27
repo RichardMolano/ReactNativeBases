@@ -1,4 +1,7 @@
+import { DrawerActions } from '@react-navigation/native';
 import React, { useState } from 'react';
+import { BottomSheetDropdown } from './hooks/Drop';
+import { Menu } from 'react-native-paper';
 import {
   View,
   Text,
@@ -18,8 +21,11 @@ type Producto = {
   id: string;
   nombre: string;
   precio: number;
-
+  useded?: boolean; // Añadido para indicar si el producto está usado o no
+  description?: string; // Añadido para la descripción del producto
 };
+
+
 
 
 
@@ -41,21 +47,28 @@ const iconosDisponibles = [
   
   export default function InventoryScreen() {
     const [productos, setProductos] = useState<Producto[]>([
-      { id: '1', nombre: '🧰 Martillo', precio: 20000 },
-      { id: '2', nombre: '🔩 Tornillos', precio: 5000 },
-      { id: '3', nombre: '🪚 Sierra', precio: 35000 },
+      { id: '1', nombre: '🧰 Martillo', precio: 20000 , useded: true , description: "Martillo de acero inoxidable"},
+      { id: '2', nombre: '🔩 Tornillos', precio: 5000 , useded: false , description: "Tornillos de acero inoxidable"},
+      { id: '3', nombre: '🪚 Sierra', precio: 35000 , useded: true , description: "Sierra de mano"},
     ]);
   
     const [nombreProducto, setNombreProducto] = useState('');
     const [precioProducto, setPrecioProducto] = useState('');
+    const [descripcionProducto, setDescripcionProducto] = useState('');
+    const [usadoProducto, setUsadoProducto] = useState(false);
     const [iconoSeleccionado, setIconoSeleccionado] = useState<string | null>(null);
   
     const [modoEdicion, setModoEdicion] = useState(false);
     const [productoEditandoId, setProductoEditandoId] = useState<string | null>(null);
   
+    const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
+    
     const agregarProducto = () => {
-      if (!nombreProducto || !precioProducto || !iconoSeleccionado) {
-        Alert.alert('Campos incompletos', 'Por favor completa todos los campos y selecciona un ícono.');
+      if (!nombreProducto || !precioProducto || !iconoSeleccionado || !descripcionProducto ) {
+        
+        Alert.alert('Campos incompletos', 'Por favor completa todos los campos y selecciona un ícono.'
+          + ' n ' +nombreProducto + ' $ ' + precioProducto + ' icon:  ' + iconoSeleccionado + 'des : ' + descripcionProducto + ' us :' + usadoProducto
+        );
         return;
       }
   
@@ -68,7 +81,7 @@ const iconosDisponibles = [
       if (modoEdicion && productoEditandoId) {
         const productosActualizados = productos.map((prod) =>
           prod.id === productoEditandoId
-            ? { ...prod, nombre: `${iconoSeleccionado} ${nombreProducto}`, precio }
+            ? { ...prod, nombre: `${iconoSeleccionado} ${nombreProducto}`, precio , useded: usadoProducto, description: descripcionProducto }
             : prod
         );
         setProductos(productosActualizados);
@@ -79,12 +92,16 @@ const iconosDisponibles = [
           id: Date.now().toString(),
           nombre: `${iconoSeleccionado} ${nombreProducto}`,
           precio,
+          useded: usadoProducto,
+          description: descripcionProducto,
         };
         setProductos([...productos, nuevoProducto]);
       }
   
       setNombreProducto('');
       setPrecioProducto('');
+      setDescripcionProducto('');
+      setUsadoProducto(false);
       setIconoSeleccionado(null);
     };
   
@@ -94,6 +111,8 @@ const iconosDisponibles = [
       setNombreProducto(restoNombre.join(' '));
       setPrecioProducto(producto.precio.toString());
       setModoEdicion(true);
+      setDescripcionProducto(producto.description || '');
+      setUsadoProducto(producto.useded || false);
       setProductoEditandoId(producto.id);
     };
   
@@ -102,6 +121,8 @@ const iconosDisponibles = [
       setProductoEditandoId(null);
       setNombreProducto('');
       setPrecioProducto('');
+      setDescripcionProducto('');
+      setUsadoProducto(false);
       setIconoSeleccionado(null);
     };
   
@@ -174,7 +195,34 @@ const iconosDisponibles = [
             onChangeText={setPrecioProducto}
             keyboardType="numeric"
           />
-  
+          <TextInput
+            placeholder="Descripción del producto"
+            style={styles.input}
+            value={descripcionProducto}
+            onChangeText={setDescripcionProducto}
+          />
+          {/* desplegable */}
+          <Text style={styles.label}>¿Es usado</Text>
+
+          <TouchableOpacity
+            onPress={() => setBottomSheetVisible(true)}
+            style={styles.dropdownButton}
+          >
+            <Text style={styles.dropdownButtonText}>
+              {usadoProducto ? 'Usado' : 'Nuevo'}
+            </Text>
+          </TouchableOpacity>
+
+          <BottomSheetDropdown
+            listValue={['Nuevo', 'Usado']}
+            visible={bottomSheetVisible}
+            onDismiss={() => setBottomSheetVisible(false)}
+            onSelect={(value) => setUsadoProducto(value)}
+          />
+
+          {/* poner la vista de Drop.tsx */}
+          
+            
           <Button
             title={modoEdicion ? 'Actualizar producto' : 'Agregar producto'}
             onPress={agregarProducto}
@@ -197,6 +245,8 @@ const iconosDisponibles = [
               <View>
                 <Text style={styles.name}>{item.nombre}</Text>
                 <Text style={styles.price}>${item.precio.toLocaleString()}</Text>
+                <Text style={styles.price}>{item.description}</Text>
+                <Text style={styles.price}>{item.useded ? 'Usado' : 'Nuevo'}</Text>
               </View>
               <View style={styles.buttons}>
                 <TouchableOpacity onPress={() => editarProducto(item)} style={styles.actionButton}>
@@ -214,6 +264,18 @@ const iconosDisponibles = [
   }
   
   const styles = StyleSheet.create({
+    dropdownButton: {
+      backgroundColor: 'white',
+      padding: 10,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#ccc',
+      marginBottom: 10,
+    },
+    dropdownButtonText: {
+      fontSize: 16,
+    },
+    
     container: { flex: 1, padding: 20, backgroundColor: '#f0f0f0' },
     title: { fontSize: 24, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' },
     form: { marginBottom: 20 },
